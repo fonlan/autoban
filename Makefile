@@ -15,11 +15,14 @@ define Package/autoban
   DEPENDS:=+iptables
 endef
 
+define Build/Compile
+endef
+
 define Package/autoban/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(CP) ./files/autoban $(1)/etc/init.d
+	$(CP) ./files/autoban $(1)/etc/init.d/autoban
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(CP) ./files/autoban.sh $(1)/usr/bin
+	$(CP) ./files/autoban.sh $(1)/usr/bin/autoban.sh
 endef
 
 $(eval $(call BuildPackage,autoban))
