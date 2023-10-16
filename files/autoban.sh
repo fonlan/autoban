@@ -24,6 +24,7 @@ if [ -f "$DB_FILE" ]; then
         if [ $current_time -ge $ban_to_time ]; then
             logger -t autoban "$ip has been removed from block list"
             iptables -D INPUT -s $ip -j DROP
+            sed -i "/$ip/d" $DB_FILE
         fi
     done
 fi
