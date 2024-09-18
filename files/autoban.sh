@@ -6,8 +6,7 @@ DB_FILE=/tmp/autoban.db
 
 get_recent_bad_password_log() {
     current_time=$(date "+%s")
-    logread -t -e "Bad password attempt" | awk '{gsub(/\[|\]|:[0-9]+/, ""); print $6, $15}' | while read timestamp ip
-    do
+    logread -t -e "Bad password attempt" | awk '{gsub(/\[|\]|:[0-9]+/, ""); print $6, $15}' | while read -r timestamp ip; do
         timestamp=${timestamp%.*}
         log_time=$(date -d @$timestamp "+%s")
         time_diff=$((current_time - log_time))
@@ -18,7 +17,7 @@ get_recent_bad_password_log() {
 }
 
 if [ -f "$DB_FILE" ]; then
-    cat "$DB_FILE" | while read ip ban_to_time; do
+    while read -r ip ban_to_time; do
         ban_to_time=$(echo -n "$ban_to_time" | tr -d '\n')
         current_time=$(date "+%s")
         if [ $current_time -ge $ban_to_time ]; then
@@ -26,15 +25,14 @@ if [ -f "$DB_FILE" ]; then
             iptables -D INPUT -s $ip -j DROP
             sed -i "/$ip/d" $DB_FILE
         fi
-    done
+    done <${DB_FILE}
 fi
 
 ips=$(get_recent_bad_password_log)
 if [ -z "$ips" ]; then
     exit 0
 fi
-echo -e "$ips" | sort -u | while read ip
-do
+echo -e "$ips" | sort -u | while read -r ip; do
     attempts=$(echo -e "$ips" | grep -c "$ip")
     if [ $attempts -ge $MAX_ATTEMPTS ]; then
         current_time=$(date "+%s")
@@ -42,12 +40,12 @@ do
         if [ -f "$DB_FILE" ]; then
             if ! grep -q "^$ip " $DB_FILE; then
                 iptables -I INPUT -s $ip -j DROP
-                echo "$ip $ban_to_time" >> $DB_FILE
+                echo "$ip $ban_to_time" >>$DB_FILE
                 logger -t autoban "$ip has been added to block list"
             fi
         else
             iptables -I INPUT -s $ip -j DROP
-            echo "$ip $ban_to_time" >> $DB_FILE
+            echo "$ip $ban_to_time" >>$DB_FILE
             logger -t autoban "$ip has been added to block list"
         fi
     fi
